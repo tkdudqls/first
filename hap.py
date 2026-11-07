@@ -3,15 +3,23 @@ v 0.0.1
 - 중간고사 점수 추가
 
 v 0.0.2
-- 홈화면, 돌아가기 추가
-- 파일입출력 추가
+- 홈화면, 돌아가기 추가 완료
+- 파일입출력 추가 완료
 - 중간고사 점수 추가 완료
+- 입력창 함수화
 
+todo
+- 멘티 고르기에도 똑같이 만들어야함
+- 멘토 멘티 확인창(CheckMM)
+
+- 과목별 수준???
+- 요일별 시간???????????????
+- 코사인 유사도, tfidf???
+- 이대로 내도 되기는 한데 좋은점수는 못받을듯 ㄹㅇ
 
 **오늘 도서관가서 코드만짠다**
-
+무조건 강동구립 해공도서관으로
 """
-
 
 import streamlit as st # gui 창
 import pandas as pd
@@ -24,32 +32,7 @@ with open(MENTOR_FILE, "a", encoding="utf-8") : # 파일이 없으면 새로 생
 with open(MENTEE_FILE, "a", encoding="utf-8") : 
     pass
 
-mentors = [ # 임시멘토
-    {
-        "name": "김민수",
-        "subjects": ["수학", "영어"],
-        "days": ["월", "수", "금"],
-        "level": "초급",
-        "method": "온라인",
-        "middle_score": 85
-    },
-    {
-        "name": "이서연",
-        "subjects": ["국어", "수학"],
-        "days": ["화", "목", "토"],
-        "level": "중급",
-        "method": "오프라인",
-        "middle_score": 95
-    },
-    {
-        "name": "홍길동",
-        "subjects": ["국어", "수학", "영어", "과학", "사회"],
-        "days": ["월", "화", "수", "목", "토"],
-        "level": "고급",
-        "method": "오프라인",
-        "middle_score": 100
-    }
-] # 정보 들어갈 딕셔너리
+mentors = [ ] # 정보 들어갈 딕셔너리
 mentees = [ ]
 
 
@@ -138,23 +121,6 @@ def match_mentors(mentors, mentee, top_n=3): # top_n=3
     return results[:top_n]
 
 #file_io_prac.py
-#사용자 -> 딕셔너리
-def add_people(peoples) :
-    people = {
-        "name" : input("이름 : ").strip(),
-        "subjects" : input("과목(,로 구분) : ").split(),
-        "days" : input("가능 요일(,로 구분) : ").split(),
-        "level" : input("수준(,로 구분) : ").strip(),
-        "middle_score" : int(input("중간고사 점수 : "))
-    }
-    peoples.append(people)
-
-def add_mentor() :
-    return add_people(mentors)
-
-def add_mentee() :
-    return add_people(mentees)
-
 
 #딕셔너리 -> 파일
 def write_people(filename, peoples) : # write_mentor(mentors) 하면 mentors 딕셔너리 전체가 파일에 저장
@@ -210,18 +176,98 @@ def read_mentees() :
    mentees.clear()
    return read_people(MENTEE_FILE, mentees)
 
+def info_input(info_txt):
+    if info_txt == "멘토" :
+        PEOPLE = mentors
+        FILE = MENTOR_FILE
+        OTHER_txt = "멘티"
+        OTHER_FILE = MENTEE_FILE
+        OTHER = mentees
+        
+    elif info_txt == "멘티" :
+        PEOPLE = mentees
+        FILE = MENTEE_FILE
+        OTHER_txt = "멘토"
+        OTHER_FILE = MENTOR_FILE
+        OTHER = mentors
+        
+    st.title(info_txt + "로 참여하기") # 제목
+    st.write("나의 성향과 일정에 꼭 맞는 최적의 " + info_txt + "를 매칭해 드립니다!") # 멘티 설명글
+    
+    read_people(FILE, PEOPLE)
+    
+    #st.subheader("등록된 " + info_txt)
+    #st.dataframe(pd.DataFrame(PEOPLE)) # mentors에 있는거 출력
 
+    st.subheader(info_txt + "정보 입력")
 
+    name = st.text_input("이름")
+    subjects = st.multiselect( # 과목 다중선택
+        "배우고 싶은 분야",
+        [ "국어",  "영어", "수학", "사회", "과학", "역사", "도덕",
+        "기술가정", "정보", "체육", "음악", "미술"]
+    )
+    days = st.multiselect( # 요일 다중선택
+        "가능한 요일",
+        ["월", "화", "수", "목", "금", "토", "일"]
+    )
+    level = st.selectbox( # 현재 수준 선택
+        "현재 수준",
+        ["초급", "중급", "고급"]
+    )
+    method = st.selectbox( # 온/오프라인 여부 선택
+        "수업 방법",
+        ["온라인", "오프라인"]
+    )
+    middle_score = st.number_input( # 중간고사 점수 입력
+        "중간고사 점수",
+        min_value=0,
+        max_value=100
+    )
 
+    if st.button("나와 맞는 " + OTHER_txt + " 찾기"): # 멘토찾기 버튼 눌렀을때
+        if not name.strip(): # 이름없음
+            st.warning("이름을 입력하세요.")
+        elif not subjects: # 과목 선택 안함
+            st.warning("배우고 싶은 과목을 하나 이상 선택하세요.")
+        elif not days: # 요일 선택 안함
+            st.warning("가능한 요일을 하나 이상 선택하세요.")
+        else:
+            person = {
+                "name": name.strip(),
+                "subjects": subjects,
+                "days": days,
+                "level": level,
+                "method": method,
+                "middle_score": middle_score
+            }
 
+            read_people(FILE, PEOPLE)  # 기존 멘티 정보 불러오기
+            read_people(OTHER_FILE, OTHER) # 멘토 정보 불러오기
 
+            if person not in PEOPLE:
+                PEOPLE.append(person)
+                write_people(FILE, PEOPLE) # 바꿔야함
 
+            results = match_mentors(OTHER, person)
 
+            if not results:
+                st.info("관심 분야가 맞는 " + info_txt + "가 없습니다.")
+            else:
+                st.subheader(f"{person['name']}님의 추천 결과")
 
+                for rank, result in enumerate(results, start=1):
+                    st.markdown(f"### {rank}위 {result['name']} - {result['score']}점") # 1위 홍길동 - 100점
 
+                    st.progress(int(result["score"]))
 
+                    st.write("분야:", ", ".join(result["subjects"]))
+                    st.write("가능 요일:", ", ".join(result["days"]))
+                    st.write("방식:", result["method"])
 
-
+                    st.write("추천 이유")
+                    for reason in result["reasons"]:
+                        st.write("-", reason)
 
 
 
@@ -249,121 +295,37 @@ if st.session_state.page == "home" :
         st.session_state.page = "Check_MM" #멘토멘티 확인 페이지로 이동
         st.rerun() # 화면 초기화
 
-if st.session_state.page == "Mentor" : # 멘토로 참여하기
-    st.title("멘토로 참여하기")
-    st.write("나의 경험과 지식을 필요로 하는 멘티를 매칭해 드립니다!") # 멘토 설명글
+# 멘토로 참여하기
+if st.session_state.page == "Mentor" : 
+    info_input("멘토")
     if st.button("돌아가기") :
         st.session_state.page = "home" # 홍으로 돌아가기
         st.rerun() # 화면 초기화
 
-elif st.session_state.page == "Mentee" : # 멘티로 참여하기
-    st.title("멘티로 참여하기") # 제목
-    st.write("나의 성향과 일정에 꼭 맞는 최적의 멘토를 매칭해 드립니다!") # 멘티 설명글
-
-    st.subheader("등록된 멘토")
-
-    read_mentors()
-
-#    display_data = [] # 모든 멘토 정보 저장 배열
- #   for mentor in mentors:
-  #      display_data.append({
-   #         "이름": mentor["name"],
-    #        "분야": ", ".join(mentor["subjects"]),
-     #       "가능 요일": ", ".join(mentor["days"]),
-      #      "지도 수준": ", ".join(mentor["level"]),
-       #     "방식": mentor["method"],
-        #    "중간고사 점수": mentor["middle_score"]
-        #})
-
-    st.dataframe(pd.DataFrame(mentors)) # display_data에 있는거 출력
-                                            # 그냥 file_io_prac에 있는 함수 쓰면 될듯?
-
-    st.subheader("멘티 정보 입력")
-
-    mentee_name = st.text_input("이름")
-    subjects = st.multiselect( # 과목 다중선택
-        "배우고 싶은 분야",
-        [ "국어",  "영어", "수학", "사회", "과학", "역사", "도덕",
-        "기술가정", "정보", "체육", "음악", "미술"]
-    )
-    days = st.multiselect( # 요일 다중선택
-        "가능한 요일",
-        ["월", "화", "수", "목", "금", "토", "일"]
-    )
-    level = st.selectbox( # 현재 수준 선택
-        "현재 수준",
-        ["초급", "중급", "고급"]
-    )
-    method = st.selectbox( # 온/오프라인 여부 선택
-        "수업 방법",
-        ["온라인", "오프라인"]
-    )
-    middle_score = st.number_input( # 중간고사 점수 입력
-        "중간고사 점수",
-        min_value=0,
-        max_value=100
-    )
-    
-
-    if st.button("나와 맞는 멘토 찾기"): # 멘토찾기 버튼 눌렀을때
-        if not mentee_name.strip(): # 이름없음
-            st.warning("이름을 입력하세요.")
-        elif not subjects: # 과목 선택 안함
-            st.warning("배우고 싶은 과목을 하나 이상 선택하세요.")
-        elif not days: # 요일 선택 안함
-            st.warning("가능한 요일을 하나 이상 선택하세요.")
-        else:
-            mentee = {
-                "name": mentee_name.strip(),
-                "subjects": subjects,
-                "days": days,
-                "level": level,
-                "method": method,
-                "middle_score": middle_score
-            }
-
-            read_mentees()  # 기존 멘티 정보 불러오기
-
-            mentees.append(mentee)  # 새로운 멘티 정보 추가
-
-            write_mentees()  # 기존 정보 + 새로운 정보 저장
-
-            results = match_mentors(mentors, mentee)
-
-            if not results:
-                st.info("관심 분야가 맞는 멘토가 없습니다.")
-            else:
-                st.subheader(f"{mentee['name']}님의 추천 결과")
-
-                for rank, result in enumerate(results, start=1):
-                    st.markdown(f"### {rank}위 {result['name']} - {result['score']}점") # 1위 홍길동 - 100점
-
-                    st.progress(int(result["score"]))
-
-                    st.write("분야:", ", ".join(result["subjects"]))
-                    st.write("가능 요일:", ", ".join(result["days"]))
-                    st.write("방식:", result["method"])
-
-                    st.write("추천 이유")
-                    for reason in result["reasons"]:
-                        st.write("-", reason)
-
-                    st.divider()
+#멘티로 참여하기
+elif st.session_state.page == "Mentee" :
+    info_input("멘티")
     if st.button("돌아가기") :
             st.session_state.page = "home" # 홍으로 돌아가기
             st.rerun() # 화면 초기화
 
+#멘토로 참여하기
 elif st.session_state.page == "Check_MM" :
     st.title("멘토, 멘티 확인")
+    read_mentees()
+    read_mentors()
+    
     st.write("멘토")
-    #멘토 표 보여주기
+    st.dataframe(pd.DataFrame(mentors)) # 멘토 표 출력
+    
     st.write("멘티")
-    #멘티 표 보여주기
+    st.dataframe(pd.DataFrame(mentees)) # 멘티 표 출력
+    
+
+
     if st.button("돌아가기") :
         st.session_state.page = "home" # 홍으로 돌아가기
         st.rerun() # 화면 초기화
-
-
 
 empty = ''' #주석 출력 방지용
 내용 질문
@@ -379,5 +341,4 @@ empty = ''' #주석 출력 방지용
 찍어서 90점맞고 밀려서 80점맞으면 어떻게함? 정확도가 떨어짐, 초~고 기준이라서 모의고사도 못쓰네
 
 사람들이 정직하게 점수를 쓸것인가? <- 이건 배제해야할듯
-
 '''
