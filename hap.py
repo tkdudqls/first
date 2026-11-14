@@ -8,10 +8,13 @@ v 0.0.2
 - 중간고사 점수 추가 완료
 - 입력창 함수화
 
-todo
-- 멘티 고르기에도 똑같이 만들어야함
+v 0.0.3
 - 멘토 멘티 확인창(CheckMM)
+- 멘티 고르기에도 똑같이 만들어야함
 
+todo
+- 멘토, 멘티 정보 삭제
+- 로그인?
 - 과목별 수준???
 - 요일별 시간???????????????
 - 코사인 유사도, tfidf???
@@ -169,11 +172,9 @@ def read_people(filename, peoples) : # 파일에서부터 정보 꺼내서 딕�
                     continue
 
 def read_mentors() :
-   mentors.clear()
    return read_people(MENTOR_FILE, mentors)
 
 def read_mentees() :
-   mentees.clear()
    return read_people(MENTEE_FILE, mentees)
 
 def info_input(info_txt):
@@ -195,9 +196,12 @@ def info_input(info_txt):
     st.write("나의 성향과 일정에 꼭 맞는 최적의 " + info_txt + "를 매칭해 드립니다!") # 멘티 설명글
     
     read_people(FILE, PEOPLE)
-    
+
+#                멘토 멘티 등록창에 파트너 표 표시하는 코드
+#==========================================================================
     #st.subheader("등록된 " + info_txt)
     #st.dataframe(pd.DataFrame(PEOPLE)) # mentors에 있는거 출력
+#==========================================================================
 
     st.subheader(info_txt + "정보 입력")
 
