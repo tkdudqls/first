@@ -19,9 +19,6 @@ todo
 - 요일별 시간???????????????
 - 코사인 유사도, tfidf???
 - 이대로 내도 되기는 한데 좋은점수는 못받을듯 ㄹㅇ
-
-**오늘 도서관가서 코드만짠다**
-무조건 강동구립 해공도서관으로
 """
 
 import streamlit as st # gui 창
@@ -51,7 +48,7 @@ def calculate_score(mentor, mentee): # 점수 계산
     score = 0 # 점수 초기화
     reasons = [] # 이유
 
-    common_subjects = set(mentee["subjects"]) & set(mentor["subjects"]) # 멘토와 멘티 과목 교집합(겹치는부분)
+    common_subjects = set(mentee["subjects"]) & set(mentor["subjects"]) # 멘토와 멘티 과목의 겹치는부분
 
     # 관심 분야는 무조건 하나 이상 일치해야함
     if not common_subjects: # 안일치하면
@@ -98,23 +95,27 @@ def calculate_score(mentor, mentee): # 점수 계산
 
 
 # 멘토 비교
-def match_mentors(mentors, mentee, top_n=3): # top_n=3
+def match_people(people, person, is_mentor, top_n=3): # top_n=3
     results = []
 
-    for mentor in mentors:
-        score, reasons = calculate_score(mentor, mentee)
+    for men in people:
+        if is_mentor == 1 : # 멘토 -> 멘티
+            score, reasons = calculate_score(person, men) 
+        else : # 멘티 -> 멘토
+            score, reasons = calculate_score(men, person)
 
         if score == 0:
             continue
 
         results.append({
-            "name": mentor["name"],
+            "name": men["name"],
             "score": score,
             "reasons": reasons,
-            "subjects": mentor["subjects"],
-            "days": mentor["days"],
-            "method": mentor["method"]
+            "subjects": men["subjects"],
+            "days": men["days"],
+            "method": men["method"]
         })
+        
 
     results.sort(
         key=lambda item: item["score"],
@@ -122,6 +123,9 @@ def match_mentors(mentors, mentee, top_n=3): # top_n=3
     ) # 멘토(item) 딕셔너리를 점수 순으로 내림차순
 
     return results[:top_n]
+
+def match_mentor() :
+    return match_people(mentors, mentees)
 
 #file_io_prac.py
 
@@ -183,7 +187,8 @@ def info_input(info_txt):
         FILE = MENTOR_FILE
         OTHER_txt = "멘티"
         OTHER_FILE = MENTEE_FILE
-        OTHER = mentees
+        OTHER = mentees 
+        is_mentor = 1
         
     elif info_txt == "멘티" :
         PEOPLE = mentees
@@ -191,9 +196,10 @@ def info_input(info_txt):
         OTHER_txt = "멘토"
         OTHER_FILE = MENTOR_FILE
         OTHER = mentors
+        is_mentor = 0
         
     st.title(info_txt + "로 참여하기") # 제목
-    st.write("나의 성향과 일정에 꼭 맞는 최적의 " + info_txt + "를 매칭해 드립니다!") # 멘티 설명글
+    st.write("나의 성향과 일정에 꼭 맞는 최적의 " + OTHER_txt + "를 매칭해 드립니다!") # 멘티 설명글
     
     read_people(FILE, PEOPLE)
 
@@ -253,10 +259,10 @@ def info_input(info_txt):
                 PEOPLE.append(person)
                 write_people(FILE, PEOPLE) # 바꿔야함
 
-            results = match_mentors(OTHER, person)
+            results = match_people(OTHER, person, is_mentor)
 
             if not results:
-                st.info("관심 분야가 맞는 " + info_txt + "가 없습니다.")
+                st.info("관심 분야가 맞는 " + OTHER_txt + "가 없습니다.")
             else:
                 st.subheader(f"{person['name']}님의 추천 결과")
 
